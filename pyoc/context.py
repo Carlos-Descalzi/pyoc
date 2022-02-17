@@ -37,14 +37,26 @@ class Context:
         self, obj_type: Type, name: str = None, factory: Callable = None, lazy: bool = True, singleton: bool = False
     ):
         """
-        Factory method (chainable) that adds a new dependency to the context to be resolved
+        Add an object to the context, which can be a concrete type, or a factory.
+        Parameters:
+            obj_type: the object class to add. If a factory is used, this can be the parent class of the
+                object provided by the factory.
+            name: An optional name if the object is intended to be resolved by name.
+            factory: (optional) a Callable which provides instances of this object.
+            lazy: create the object on demand or when context is built.
+            singleton: specifies if it is a singleton or new instances must be
+                returned all the time.
+        Return value:
+            the desired object.
         """
         self._obj_types.append(TypeDefinition(obj_type, name, lazy, singleton, factory))
         return self
 
     def add_object(self, obj: Any):
         """
-        Adds an instance.
+        Adds an object instance. This object will behave as a singleton.
+        Parameters:
+            obj: The object to add to the context.
         """
         self._obj_types.append(TypeDefinition(obj.__class__, None, False, True, None))
         self._singletons[obj.__class__] = obj
@@ -53,17 +65,19 @@ class Context:
     def add_factory(self, type_selector: Callable, factory_function: Callable, singleton: bool = False):
         """
         Adds a factory with a type selector.
-        type_selector a function/or lambda with class as parameter, which returns True or False
-        to determine if the factory is able to create the type.
+        Parameters:
+            type_selector: a callable which receives the requested class as parameter, must return True or False
+                to determine if the factory is able to create the type.
 
-        factory_function, a function that receives the class as parameter.
+            factory_function: A callable that receives the class and the context as parameters, must provide
+                and object.
         """
         self._factories.append(FactoryDefinition(type_selector, factory_function, singleton))
         return self
 
     def wrap(self, obj_type: Type, method_expr: str, wrapper_type: Callable):
         """
-        Adds a wrapper around a methods which match with a given regular expression in a given
+        Adds a wrapper callable around a methods which match with a given regular expression in a given
         class.
         """
         self._wrappers.append(WrapperDefinition(obj_type, method_expr, wrapper_type))
@@ -71,8 +85,7 @@ class Context:
 
     def get_by_type(self, obj_type: Type[T]) -> T:
         """
-        Creates a new instance given an object type, which can be
-        either the actual type requested, or a parent class.
+        Returns an object of the desired type, which can be the exact class or a subclass.
         """
         actual_obj_type = self._find_type(obj_type)
 
@@ -80,14 +93,14 @@ class Context:
 
     def get_all_by_type(self, obj_type: Type[T]) -> List[T]:
         """
-        Gets instances of all objects of a given type, including subclasses
+        Returns all objects of the desired type, including subclasses
         """
         return [self._instantiate_dependency(None, t) for t in self._find_types(obj_type)]
 
     def get_by_expr(self, search_expr: Callable) -> Any:
         """
         Creates a new instance given a search expression over object types.
-        Must be a function of type f(x) where x is the object type, and must return True/False.
+        Must be a callable which receives as parameter a type and return True or False.
         """
         actual_obj_type = self._find_type_by_expr(search_expr)
 
@@ -228,19 +241,14 @@ class Context:
 
         wrapper_infos = self._find_wrappers(obj_type)
 
-        # Iterate through the class properties
         for name, member in class_dict.items():
-            # If the item is a dependency to be resolved
             if self._hasattr(member, "_dependency"):
-                # Resolve the dependency, allowing it to use __call__to instantiate
                 new_members[name] = DependencyResolver(self, member, member._dependency)
             elif inspect.isfunction(member):
                 for wrapper_info in wrapper_infos:
                     if wrapper_info and wrapper_info.matches(name):
                         wrapper_types[name].append(wrapper_info.wrapper_type)
 
-        # For all the new dependencies found and resolved, add them by name to the class
-        # allowing them to be accessed with ClassName.NameOfDependency
         class_dict.update(new_members)
         class_dict["__getattribute__"] = _getattr
         class_dict["__wrappers"] = {}
@@ -261,7 +269,6 @@ class Context:
         return obj
 
     def _hasattr(self, member, name):
-        # Skip mock objects in tests
         return not isinstance(member, MagicMock) and hasattr(member, name)
 
     def _resolve_dependency_type(self, dependency):

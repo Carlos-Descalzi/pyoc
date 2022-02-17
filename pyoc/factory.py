@@ -32,7 +32,7 @@ class FactoryProxy:
 
     def __call__(self, *args, **kwargs):
         """
-        Factory callables must support two parameter:
+        Factory callables must support two parameters:
             - the object type being created.
             - the context where it lives.
         """
