@@ -1,14 +1,14 @@
 from flask_restful import Resource, abort, request
 import json
 import pyoc
-from . import model
+from .model import User
 from .ifces import UserService
 from dataclasses import asdict
 from flask import Flask
 from flask_restful import Api
 
 
-class Users(Resource):
+class UsersResource(Resource):
     """
     Users endpoint
     """
@@ -22,14 +22,14 @@ class Users(Resource):
     def post(self):
         try:
             user_json = json.loads(request.data)
-            user = model.User(**user_json)
+            user = User(**user_json)
             user = self._user_service.save(user)
             return asdict(user), 201
         except Exception as e:
             abort(500, str(e))
 
 
-class User(Resource):
+class UserResource(Resource):
     """
     User endpoint
     """
@@ -65,7 +65,7 @@ def build_app(ctx):
     api = Api(app)
 
     bp = pyoc.flask.BluePrint("main", __name__, "/", ctx)
-    bp.add_endpoint(Users, "/users", methods=["GET", "POST"])
-    bp.add_endpoint(User, "/users/<int:id>", methods=["GET", "DELETE", "PUT"])
+    bp.add_endpoint(UsersResource, "/users", methods=["GET", "POST"])
+    bp.add_endpoint(UserResource, "/users/<int:id>", methods=["GET", "DELETE", "PUT"])
     app.register_blueprint(bp)
     return app
