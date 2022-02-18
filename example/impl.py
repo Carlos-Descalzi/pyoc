@@ -16,7 +16,7 @@ class SQLUserDaoImpl(UserDao):
             c.execute("select id, name from users where id = ?", (id,))
 
             for id, name in c.fetchall():
-                return User(row[0], row[1])
+                return User(id, name)
         finally:
             c.close()
 
@@ -53,6 +53,7 @@ class SQLUserDaoImpl(UserDao):
         c = self._conn.cursor()
         try:
             c.execute("delete from users where id = ?", (id,))
+            c.execute("commit")
         finally:
             c.close()
 
