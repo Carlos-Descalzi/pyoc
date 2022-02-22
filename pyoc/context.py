@@ -53,14 +53,18 @@ class Context:
         self._obj_types.append(TypeDefinition(obj_type, name, lazy, singleton, factory))
         return self
 
-    def add_object(self, obj: Any):
+    def add_object(self, obj: Any, name=None):
         """
         Adds an object instance. This object will behave as a singleton.
         Parameters:
             obj: The object to add to the context.
+            name: optional, the object name
         """
-        self._obj_types.append(TypeDefinition(obj.__class__, None, False, True, None))
+        obj_type = TypeDefinition(obj.__class__, name, False, True, None)
+        self._obj_types.append(obj_type)
         self._singletons[obj.__class__] = obj
+        if name:
+            self._obj_type_name_dict[name] = obj_type
         return self
 
     def add_factory(self, type_selector: Callable, factory_function: Callable, singleton: bool = False):
@@ -83,6 +87,14 @@ class Context:
         """
         self._wrappers.append(WrapperDefinition(obj_type, method_expr, wrapper_type))
         return self
+
+    def get(self, type_or_name: Union[str, Type[T]]) -> T:
+        """
+        Returns an object by either its type or its name.
+        """
+        if isinstance(type_or_name, str):
+            return self.get_by_name(type_or_name)
+        return self.get_by_type(type_or_name)
 
     def get_by_type(self, obj_type: Type[T]) -> T:
         """

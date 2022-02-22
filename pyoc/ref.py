@@ -9,7 +9,6 @@ def ref(type_or_name):
     a type or a name
     When used as method decorator, the method will return the instance
     of the desired object.
-
     """
     if isinstance(type_or_name, str):
         return Dependency(type_or_name, None)
@@ -60,7 +59,7 @@ class Dependency:
         return func
 
     def __str__(self):
-        return f"Dependency(name={self._name},type={self._type},list_of_type={self._list_of_type})"
+        return f"Dependency(name={self._name},type={self._type},ref_type={self._ref_type})"
 
     def __iter__(self):
         """
