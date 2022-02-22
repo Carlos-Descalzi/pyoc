@@ -3,7 +3,7 @@ import re
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
 import typing
-from typing import Any, Callable, List, Type, TypeVar
+from typing import Any, Callable, List, Type, TypeVar, Union
 from mock.mock import MagicMock
 from .exceptions import DependencyError
 from .wrapper import WrapperDefinition, Wrapper, WrapperChain
@@ -242,12 +242,13 @@ class Context:
                 arg_types = annotation.__args__
                 if arg_types:
                     return Dependency(None, arg_types[0], Dependency.LIST)
-            elif self._is_mapping_type:
+            elif self._is_mapping_type(annotation):
                 arg_types = annotation.__args__
                 if arg_types:
                     key_type, val_type = arg_types
                     return Dependency(None, val_type, Dependency.MAPPING, key_type)
 
+        # not using getattr since will cause stack overflow
         attr = obj_type.__getattribute__(obj, attr_name)
 
         return attr
@@ -288,9 +289,7 @@ class Context:
             if self._hasattr(member, "_dependency"):
                 new_members[name] = DependencyResolver(self, member, member._dependency)
             elif inspect.isfunction(member):
-                for wrapper_info in wrapper_infos:
-                    if wrapper_info and wrapper_info.matches(name):
-                        wrapper_types[name].append(wrapper_info.wrapper_type)
+                wrapper_types[name] += [wi.wrapper_type for wi in wrapper_infos if wi.matches(name)]
 
         class_dict.update(new_members)
         class_dict["__getattribute__"] = _getattr
@@ -301,6 +300,7 @@ class Context:
         return type(f"{obj_type.__name__}_New", (obj_type,), class_dict)
 
     def _process_object(self, obj):
+
         for key, val in obj.__class__.__dict__.items():
             if isinstance(val, Dependency):
                 dependency_type = self._resolve_dependency_type(val)

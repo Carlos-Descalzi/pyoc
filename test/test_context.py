@@ -17,7 +17,7 @@ class TestContext(unittest.TestCase):
 
         context = pyoc.Context().add(Object1).add(Object2).build()
 
-        obj = context.get_by_type(Object2)
+        obj = context.get(Object2)
         self.assertIsNotNone(obj)
 
         result = obj.do_something()
@@ -36,7 +36,7 @@ class TestContext(unittest.TestCase):
 
         context = pyoc.Context().add(Object1).add(Object2).build()
 
-        obj = context.get_by_type(Object2)
+        obj = context.get(Object2)
         self.assertIsNotNone(obj)
 
         result = obj.do_something()
@@ -55,7 +55,7 @@ class TestContext(unittest.TestCase):
 
         context = pyoc.Context().add(Object1).add(Object2).build()
 
-        obj = context.get_by_type(Object2)
+        obj = context.get(Object2)
         self.assertIsNotNone(obj)
         v = obj.object_1
         self.assertIsInstance(v, list)
@@ -75,7 +75,7 @@ class TestContext(unittest.TestCase):
 
         context = pyoc.Context().add(Object1, name="obj_1").add(Object2).build()
 
-        obj = context.get_by_type(Object2)
+        obj = context.get(Object2)
         self.assertIsNotNone(obj)
         self.assertIsInstance(obj.object_1, dict)
         self.assertIn("obj_1", obj.object_1)
@@ -97,7 +97,7 @@ class TestContext(unittest.TestCase):
 
         context = pyoc.Context().add(Object3).add(Object4).build()
 
-        obj = context.get_by_type(Object4)
+        obj = context.get(Object4)
 
         self.assertEqual(1, obj.do_something())
         self.assertEqual(1, obj.do_something())
@@ -118,7 +118,7 @@ class TestContext(unittest.TestCase):
 
         context = pyoc.Context().add(Object3, singleton=True).add(Object4).build()
 
-        obj = context.get_by_type(Object4)
+        obj = context.get(Object4)
 
         self.assertEqual(1, obj.do_something())
         self.assertEqual(2, obj.do_something())
@@ -138,3 +138,18 @@ class TestContext(unittest.TestCase):
         objs = context.get_all_by_type(Parent)
 
         self.assertEqual(2, len(objs))
+
+    def test_wrapper(self):
+        class Obj:
+            def return_something(self):
+                return 1
+
+        class MyWrapper(pyoc.Wrapper):
+            def __call__(self):
+                return self.next() + 1
+
+        context = pyoc.Context().add(Obj).wrap(Obj, ".*", MyWrapper).build()
+
+        obj = context.get(Obj)
+
+        self.assertEqual(2, obj.return_something())

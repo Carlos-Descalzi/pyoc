@@ -1,14 +1,15 @@
-from typing import Callable, Type, Any, List
+from typing import Callable, Type, Any, List, Union
 
 T = Any
 
 
-def ref(type_or_name):
+def ref(type_or_name: Union[str, Type[T]]) -> T:
     """
     When used as function, defines a reference to another object given
     a type or a name
     When used as method decorator, the method will return the instance
     of the desired object.
+    DEPRECATED: Now uses type hints
     """
     if isinstance(type_or_name, str):
         return Dependency(type_or_name, None)
@@ -18,6 +19,7 @@ def ref(type_or_name):
 def refs(obj_type: Type[T]) -> List[T]:
     """
     All objects of a given type or subclasses of it.
+    DEPRECATED: Now uses type hints
     """
     return Dependency(None, obj_type, Dependency.LIST)
 

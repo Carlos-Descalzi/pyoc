@@ -1,5 +1,6 @@
 from typing import Callable, Type
 from abc import ABCMeta, abstractmethod
+import re
 
 
 class WrapperDefinition:
