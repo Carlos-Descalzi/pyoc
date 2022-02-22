@@ -36,8 +36,8 @@ class UserService(metaclass=ABCMeta):
 ```python
 class UserServiceImpl(UserService):
 
-    # references a data access object
-    _dao = pyoc.ref(UserDao)
+    # references a data access object by type hint
+    _dao: UserDao 
 
     def get(self, id: int) -> User:
         return self._dao.get(id)
@@ -58,7 +58,7 @@ class UserServiceImpl(UserService):
 class UserResource(Resource):
 
     # Reference user service by its interface.
-    _user_service = pyoc.ref(UserService)
+    _user_service: UserService
 
     def get(self, id):
         user = self._user_service.get(id)

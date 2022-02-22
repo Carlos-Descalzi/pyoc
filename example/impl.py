@@ -1,13 +1,12 @@
 from .model import User
 from .ifces import UserDao, UserService
-import pyoc
 import sqlite3
 from typing import List
 
 
 class SQLUserDaoImpl(UserDao):
 
-    _conn = pyoc.ref(sqlite3.Connection)
+    _conn: sqlite3.Connection
 
     def get(self, id: int) -> User:
 
@@ -60,7 +59,7 @@ class SQLUserDaoImpl(UserDao):
 
 class UserServiceImpl(UserService):
 
-    _dao = pyoc.ref(UserDao)
+    _dao: UserDao
 
     def get(self, id: int) -> User:
         return self._dao.get(id)

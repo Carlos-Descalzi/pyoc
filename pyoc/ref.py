@@ -20,14 +20,20 @@ def refs(obj_type: Type[T]) -> List[T]:
     """
     All objects of a given type or subclasses of it.
     """
-    return Dependency(None, obj_type, True)
+    return Dependency(None, obj_type, Dependency.LIST)
 
 
 class Dependency:
-    def __init__(self, name=None, type=None, list_of_type=False):
+
+    SIMPLE = 1
+    LIST = 2
+    MAPPING = 3
+
+    def __init__(self, name=None, type=None, ref_type=SIMPLE, key_type=None):
         self._name = name
         self._type = type
-        self._list_of_type = list_of_type
+        self._ref_type = ref_type
+        self._key_type = None
 
     @property
     def type(self):
@@ -39,7 +45,15 @@ class Dependency:
 
     @property
     def list_of_type(self):
-        return self._list_of_type
+        return self._ref_type == self.LIST
+
+    @property
+    def is_mapping(self):
+        return self._ref_type == self.MAPPING
+
+    @property
+    def key_type(self):
+        return self._key_type
 
     def __call__(self, func, *args, **kwargs):
         func._dependency = self

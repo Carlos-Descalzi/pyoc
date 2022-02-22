@@ -1,5 +1,6 @@
 import unittest
 import pyoc
+from typing import List, Mapping
 
 
 class TestContext(unittest.TestCase):
@@ -21,6 +22,64 @@ class TestContext(unittest.TestCase):
 
         result = obj.do_something()
         self.assertEqual("done", result)
+
+    def test_simple_initialization_hint(self):
+        class Object1:
+            def do_something(self):
+                return "done"
+
+        class Object2:
+            object_1: Object1
+
+            def do_something(self):
+                return self.object_1.do_something()
+
+        context = pyoc.Context().add(Object1).add(Object2).build()
+
+        obj = context.get_by_type(Object2)
+        self.assertIsNotNone(obj)
+
+        result = obj.do_something()
+        self.assertEqual("done", result)
+
+    def test_simple_initialization_hint_list(self):
+        class Object1:
+            def do_something(self):
+                return "done"
+
+        class Object2:
+            object_1: List[Object1]
+
+            def do_something(self):
+                return self.object_1.do_something()
+
+        context = pyoc.Context().add(Object1).add(Object2).build()
+
+        obj = context.get_by_type(Object2)
+        self.assertIsNotNone(obj)
+        v = obj.object_1
+        self.assertIsInstance(v, list)
+        self.assertEqual(1, len(v))
+        self.assertIsInstance(v[0], Object1)
+
+    def test_simple_initialization_hint_mapping(self):
+        class Object1:
+            def do_something(self):
+                return "done"
+
+        class Object2:
+            object_1: Mapping[str, Object1]
+
+            def do_something(self):
+                return self.object_1.do_something()
+
+        context = pyoc.Context().add(Object1, name="obj_1").add(Object2).build()
+
+        obj = context.get_by_type(Object2)
+        self.assertIsNotNone(obj)
+        self.assertIsInstance(obj.object_1, dict)
+        self.assertIn("obj_1", obj.object_1)
+        self.assertIsInstance(obj.object_1["obj_1"], Object1)
 
     def test_no_singleton(self):
         class Object3:

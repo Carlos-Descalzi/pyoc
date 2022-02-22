@@ -13,7 +13,7 @@ class UsersResource(Resource):
     Users endpoint
     """
 
-    _user_service = pyoc.ref(UserService)
+    _user_service: UserService
 
     def get(self):
         users = self._user_service.find_all()
@@ -34,7 +34,7 @@ class UserResource(Resource):
     User endpoint
     """
 
-    _user_service = pyoc.ref(UserService)
+    _user_service: UserService
 
     def get(self, id):
         user = self._user_service.get(id)

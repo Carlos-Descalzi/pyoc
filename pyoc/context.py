@@ -2,6 +2,7 @@ import inspect
 import re
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict
+import typing
 from typing import Any, Callable, List, Type, TypeVar
 from mock.mock import MagicMock
 from .exceptions import DependencyError
@@ -172,6 +173,8 @@ class Context:
     def _instantiate_dependency(self, dependency, type_info):
         if isinstance(type_info, list):
             return [self._instantiate_dependency(dependency, t) for t in type_info]
+        elif isinstance(type_info, dict):
+            return {k: self._instantiate_dependency(dependency, v) for k, v in type_info.items()}
         else:
             if type_info.singleton:
                 instance = self._singletons.get(type_info.obj_type)
@@ -209,11 +212,39 @@ class Context:
             k != "as_view"
         }
 
+    def _is_list_type(self, attr):
+        return isinstance(attr, typing._GenericAlias) and attr._name == "List"
+
+    def _is_mapping_type(self, attr):
+        return isinstance(attr, typing._GenericAlias) and attr._name == "Mapping"
+
+    def _resolve_attr(self, obj, obj_type, attr_name):
+
+        annotations = obj_type.__dict__.get("__annotations__", {})
+
+        annotation = annotations.get(attr_name)
+        if annotation:
+            if inspect.isclass(annotation):
+                return Dependency(None, annotation)
+            elif self._is_list_type(annotation):
+                arg_types = annotation.__args__
+                if arg_types:
+                    return Dependency(None, arg_types[0], Dependency.LIST)
+            elif self._is_mapping_type:
+                arg_types = annotation.__args__
+                if arg_types:
+                    key_type, val_type = arg_types
+                    return Dependency(None, val_type, Dependency.MAPPING, key_type)
+
+        attr = obj_type.__getattribute__(obj, attr_name)
+
+        return attr
+
     def _process_type(self, obj_type):
         class_dict = self._make_class_dict(obj_type)
 
         def _getattr(obj, attr):
-            result = obj_type.__getattribute__(obj, attr)
+            result = self._resolve_attr(obj, obj_type, attr)
             if isinstance(result, Dependency):
                 dependency_type = self._resolve_dependency_type(result)
                 if dependency_type is None:
@@ -277,6 +308,8 @@ class Context:
         elif dependency.type:
             if dependency.list_of_type:
                 return self._find_types(dependency.type)
+            elif dependency.is_mapping:
+                return {t.name: t for t in self._find_types(dependency.type) if t.name}
             return self._find_type(dependency.type)
         return None
 
@@ -294,13 +327,16 @@ class Context:
         Using a generator for performance reasons. When I need just first type
         I don't need to walk trough all the options.
         """
+        all_items = set()
         result = self._obj_type_dict.get(obj_type)
 
         if result:
+            all_items.add(result)
             yield result
 
         for item_key, item in self._obj_type_dict.items():
-            if issubclass(item.obj_type, obj_type) or issubclass(item_key, obj_type):
+            if (issubclass(item.obj_type, obj_type) or issubclass(item_key, obj_type)) and item not in all_items:
+                all_items.add(item)
                 yield item
 
         for factory in self._factories:
