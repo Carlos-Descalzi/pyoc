@@ -12,7 +12,7 @@ def ref(type_or_name: Union[str, Type[T]]) -> T:
     DEPRECATED: Now uses type hints
     """
     if isinstance(type_or_name, str):
-        return Dependency(type_or_name, None)
+        return Dependency(type_or_name, None)  # pragma: no cover
     return Dependency(None, type_or_name)
 
 
@@ -21,7 +21,7 @@ def refs(obj_type: Type[T]) -> List[T]:
     All objects of a given type or subclasses of it.
     DEPRECATED: Now uses type hints
     """
-    return Dependency(None, obj_type, Dependency.LIST)
+    return Dependency(None, obj_type, Dependency.LIST)  # pragma: no cover
 
 
 class Dependency:
@@ -30,11 +30,10 @@ class Dependency:
     LIST = 2
     MAPPING = 3
 
-    def __init__(self, name=None, type=None, ref_type=SIMPLE, key_type=None):
+    def __init__(self, name=None, type=None, ref_type=SIMPLE):
         self._name = name
         self._type = type
         self._ref_type = ref_type
-        self._key_type = None
 
     @property
     def type(self):
@@ -51,10 +50,6 @@ class Dependency:
     @property
     def is_mapping(self):
         return self._ref_type == self.MAPPING
-
-    @property
-    def key_type(self):
-        return self._key_type
 
     def __call__(self, func, *args, **kwargs):
         func._dependency = self

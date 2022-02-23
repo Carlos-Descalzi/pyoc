@@ -148,8 +148,16 @@ class TestContext(unittest.TestCase):
             def __call__(self):
                 return self.next() + 1
 
-        context = pyoc.Context().add(Obj).wrap(Obj, ".*", MyWrapper).build()
+        class MyWrapper2(pyoc.Wrapper):
+            def __call__(self):
+                return self.next() * -1
+
+        context = pyoc.Context()
+        context.add(Obj)
+        context.wrap(Obj, ".*", MyWrapper)
+        context.wrap(Obj, ".*", MyWrapper2)
+        context.build()
 
         obj = context.get(Obj)
 
-        self.assertEqual(2, obj.return_something())
+        self.assertEqual(-2, obj.return_something())

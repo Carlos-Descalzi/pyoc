@@ -51,7 +51,7 @@ class WrapperChain:
         return self._wrappers[0](*args, **kwargs)
 
     def __str__(self):
-        return f"WrapperChain, target:{self._target}, wrappers:[{map(str,self._wrappers)}]"
+        return f"WrapperChain, target:{self._target}, wrappers:[{map(str,self._wrappers)}]"  # pragma: no cover
 
 
 class Wrapper(metaclass=ABCMeta):
@@ -80,4 +80,4 @@ class Wrapper(metaclass=ABCMeta):
 
     @abstractmethod
     def __call__(self, *args, **kwargs):
-        pass
+        pass  # pragma: no cover

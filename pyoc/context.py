@@ -100,7 +100,9 @@ class Context:
         """
         actual_obj_type = self._find_type(obj_type)
 
-        return self._instantiate_dependency(None, actual_obj_type)
+        if actual_obj_type:
+            return self._instantiate_dependency(None, actual_obj_type)
+        return None
 
     def get_all_by_type(self, obj_type: Type[T]) -> List[T]:
         """
@@ -243,8 +245,8 @@ class Context:
             elif self._is_mapping_type(annotation):
                 arg_types = annotation.__args__
                 if arg_types:
-                    key_type, val_type = arg_types
-                    return Dependency(None, val_type, Dependency.MAPPING, key_type)
+                    _, val_type = arg_types
+                    return Dependency(None, val_type, Dependency.MAPPING)
 
         # not using getattr since will cause stack overflow
         attr = obj_type.__getattribute__(obj, attr_name)
