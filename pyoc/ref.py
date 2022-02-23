@@ -1,4 +1,4 @@
-from typing import Callable, Type, Any, List, Union
+from typing import Any, List, Type, Union
 
 T = Any
 

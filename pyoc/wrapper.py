@@ -1,4 +1,4 @@
-from typing import Callable, Type
+from typing import Callable
 from abc import ABCMeta, abstractmethod
 import re
 
