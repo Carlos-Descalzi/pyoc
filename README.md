@@ -52,8 +52,33 @@ class UserServiceImpl(UserService):
         self._dao.delete(id)
 ```
 
-## Endpoint
+## Method wrapper
 ```python
+class LogWrapper(pyoc.Wrapper):
+    def __call__(self, *args, **kwargs):
+
+        arg_str_list = list(map(str, args)) + [f"{k}={v}" for k, v in kwargs.items()]
+
+        obj_name = self.target.__self__.__class__.__name__
+        method_name = self.target.__name__
+
+        logging.info(f"invoked {obj_name}.{method_name}({','.join(arg_str_list)})")
+
+        return self.next(*args, **kwargs)
+```
+
+## Endpoints
+```python
+class UsersResource(Resource):
+    """
+    Users endpoint
+    """
+
+    _user_service: UserService
+
+    def get(self):
+        users = self._user_service.find_all()
+        return list(map(asdict, users))
 
 class UserResource(Resource):
 
@@ -67,28 +92,28 @@ class UserResource(Resource):
 
         abort(404)
 
-    def put(self, id):
-        try:
-            user_json = json.loads(request.data)
-            user = self._user_service.get(id)
-            user.name = user_json["name"]
-            self._user_service.save(user)
+```
+## Put all together
+```python
 
-            return None, 204
-        except Exception as e:
-            abort(500, str(e))
+def build_context():
+    ctx = pyoc.Context()
+    ...
+    ctx.add(SQLUserDaoImpl) # Add the user dao implementation
+    ctx.add(UserServiceImpl) # Add the user service implementation
+    ctx.wrap(UserServiceImpl, ".*", LogWrapper) # wrap service methods
+    return ctx.build()
 
-    def delete(self, id):
-        self._user_service.delete(id)
-
-        return None, 204
 
 if __name__ == '__main__':
     app = Flask(__name__)
     api = Api(app)
 
+    ctx = build_context()
+
     bp = pyoc.flask.BluePrint("main", __name__, "/", ctx)
-    bp.add_endpoint(UserResource, "/users/<int:id>", methods=["GET", "DELETE", "PUT"])
+    bp.add_endpoint(UsersResource, "/users", methods=["GET"])
+    bp.add_endpoint(UserResource, "/users/<int:id>", methods=["GET"])
     app.register_blueprint(bp)
     
     app.run(debug=True)

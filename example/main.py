@@ -5,9 +5,11 @@ from .support import create_database, build_context
 from .ifces import UserService
 from .model import User
 from .endpoints import build_app
+import logging
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
 
     create_database()
 

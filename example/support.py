@@ -1,6 +1,8 @@
 import sqlite3
 import pyoc
+from .ifces import UserService
 from .impl import SQLUserDaoImpl, UserServiceImpl
+from .wrapper import LogWrapper
 
 DB_FILENAME = "sample.db"
 
@@ -19,6 +21,7 @@ def build_context():
         .add_factory(lambda i: i == sqlite3.Connection, ConnectionFactory(DB_FILENAME))
         .add(SQLUserDaoImpl)
         .add(UserServiceImpl)
+        .wrap(UserServiceImpl, ".*", LogWrapper)
         .build()
     )
 
