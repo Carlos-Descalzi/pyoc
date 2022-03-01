@@ -55,6 +55,9 @@ class UserServiceImpl(UserService):
 ## Method wrapper
 ```python
 class LogWrapper(pyoc.Wrapper):
+    """
+    Log all method invocations
+    """
     def __call__(self, *args, **kwargs):
 
         arg_str_list = list(map(str, args)) + [f"{k}={v}" for k, v in kwargs.items()]
@@ -73,17 +76,18 @@ class UsersResource(Resource):
     """
     Users endpoint
     """
-
-    _user_service: UserService
+    _user_service: UserService # Reference user service by its interface.
 
     def get(self):
         users = self._user_service.find_all()
         return list(map(asdict, users))
 
 class UserResource(Resource):
+    """
+    User endpoint
+    """
 
-    # Reference user service by its interface.
-    _user_service: UserService
+    _user_service: UserService # Reference user service by its interface.
 
     def get(self, id):
         user = self._user_service.get(id)
